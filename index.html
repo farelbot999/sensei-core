@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sensei-Core">
+<meta name="description" content="WhiteHat Lab — Your Cyber Mentor">
+<title>SENSEI-CORE</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg-primary: #0d0d0f;
+  --bg-secondary: #141416;
+  --bg-tertiary: #1c1c20;
+  --bg-glass: rgba(255,255,255,0.04);
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --gold-dim: rgba(201,168,76,0.15);
+  --copper: #b87333;
+  --text-primary: #e8e0d0;
+  --text-secondary: #8a8070;
+  --text-muted: #4a4540;
+  --border: rgba(201,168,76,0.2);
+  --border-strong: rgba(201,168,76,0.4);
+  --success: #4caf7d;
+  --error: #e05a5a;
+  --user-bubble: rgba(201,168,76,0.12);
+  --ai-bubble: rgba(28,28,32,0.9);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* ── SPLASH SCREEN ── */
+#splash {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg-primary);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 32px;
+}
+
+.splash-logo {
+  font-family: 'Orbitron', monospace;
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 30px rgba(201,168,76,0.5), 0 0 60px rgba(201,168,76,0.2);
+  animation: logoPulse 2s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%,100% { text-shadow: 0 0 20px rgba(201,168,76,0.4); }
+  50% { text-shadow: 0 0 40px rgba(201,168,76,0.8), 0 0 80px rgba(201,168,76,0.3); }
+}
+
+.terminal-box {
+  width: min(340px, 90vw);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--gold);
+}
+
+.terminal-header {
+  display: flex; gap: 6px; margin-bottom: 12px;
+}
+.dot { width:10px; height:10px; border-radius:50%; }
+.dot.r { background:#e05a5a; }
+.dot.y { background:#e8c97a; }
+.dot.g { background:#4caf7d; }
+
+.terminal-line {
+  margin-bottom: 4px;
+  opacity: 0;
+  animation: fadeIn 0.1s forwards;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.terminal-line.prefix { color: var(--gold-light); }
+.terminal-line.success { color: var(--success); }
+.terminal-line.dim { color: var(--text-muted); }
+
+@keyframes fadeIn { to { opacity: 1; } }
+
+.splash-progress {
+  width: min(340px, 90vw);
+  height: 3px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.splash-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--copper), var(--gold));
+  border-radius: 2px;
+  animation: loadBar 2.8s ease-in-out forwards;
+}
+@keyframes loadBar { from{width:0} to{width:100%} }
+
+/* ── MAIN APP ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+#app.visible { opacity: 1; }
+
+/* STATUS BAR */
+.status-bar {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.status-left {
+  display: flex; align-items: center; gap: 10px;
+}
+
+.sensei-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--copper), var(--gold));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  position: relative;
+  flex-shrink: 0;
+}
+.sensei-avatar::after {
+  content: '';
+  position: absolute;
+  bottom: 1px; right: 1px;
+  width: 9px; height: 9px;
+  background: var(--success);
+  border-radius: 50%;
+  border: 2px solid var(--bg-secondary);
+}
+
+.status-info {}
+.app-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+}
+.status-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+.status-pulse {
+  width: 6px; height: 6px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.5; transform:scale(0.8); }
+}
+
+/* CHAT AREA */
+.chat-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.chat-area::-webkit-scrollbar { display: none; }
+
+/* MESSAGES */
+.msg-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  animation: msgIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes msgIn {
+  from { opacity:0; transform:translateY(12px) scale(0.96); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+
+.msg-row.user { flex-direction: row-reverse; }
+
+.msg-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2a2a30, #3a3a40);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.msg-row.ai .msg-avatar {
+  background: linear-gradient(135deg, var(--copper), var(--gold));
+}
+
+.bubble {
+  max-width: 80%;
+  padding: 11px 14px;
+  border-radius: 18px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.msg-row.ai .bubble {
+  background: var(--ai-bubble);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+  color: var(--text-primary);
+}
+
+.msg-row.user .bubble {
+  background: var(--user-bubble);
+  border: 1px solid var(--border-strong);
+  border-bottom-right-radius: 4px;
+  color: var(--text-primary);
+}
+
+.bubble .action-text {
+  color: var(--gold);
+  font-style: italic;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  display: block;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+
+.bubble strong { color: var(--gold-light); }
+.bubble em { color: var(--text-secondary); font-style: normal; }
+.bubble .tag {
+  display: inline-block;
+  background: var(--gold-dim);
+  border: 1px solid var(--border);
+  color: var(--gold);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  padding: 1px 7px;
+  border-radius: 4px;
+  margin: 2px 2px 2px 0;
+}
+
+.bubble-time {
+  font-size: 0.58rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-family: 'Share Tech Mono', monospace;
+}
+.msg-row.user .bubble-time { text-align: right; }
+
+/* TYPING */
+.typing-bubble {
+  display: flex; align-items: center; gap: 4px;
+  padding: 12px 16px;
+}
+.typing-dot {
+  width: 7px; height: 7px;
+  background: var(--gold);
+  border-radius: 50%;
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+  0%,60%,100% { transform:translateY(0); opacity:0.4; }
+  30% { transform:translateY(-6px); opacity:1; }
+}
+
+/* ATTACHMENT PREVIEW */
+.attachment-preview {
+  margin-top: 8px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.attachment-preview img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+.file-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  font-size: 0.78rem;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--gold);
+}
+.file-chip .fc-icon { font-size: 1.1rem; }
+
+/* INPUT AREA */
+.input-area {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 10px 12px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
+
+.attach-preview-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.attach-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--gold-dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--gold);
+  max-width: 200px;
+}
+.attach-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attach-chip .remove-attach {
+  cursor: pointer; opacity: 0.6; font-size: 0.9rem;
+  flex-shrink: 0;
+  background: none; border: none; color: var(--gold);
+}
+.attach-img-thumb {
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.input-row {
+  display: flex; align-items: flex-end; gap: 8px;
+}
+
+.input-actions {
+  display: flex; gap: 4px; flex-shrink: 0;
+}
+
+.icon-btn {
+  width: 40px; height: 40px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.icon-btn:active { transform: scale(0.92); background: var(--gold-dim); color: var(--gold); }
+
+.input-wrap {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: flex; align-items: flex-end;
+  padding: 10px 12px;
+  transition: border-color 0.2s;
+}
+.input-wrap:focus-within { border-color: var(--gold); }
+
+#userInput {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  resize: none;
+  max-height: 100px;
+  line-height: 1.4;
+}
+#userInput::placeholder { color: var(--text-muted); }
+
+.send-btn {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--copper), var(--gold));
+  border: none;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(201,168,76,0.3);
+}
+.send-btn:active { transform: scale(0.9); }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* HIDDEN INPUTS */
+#photoInput, #fileInput { display: none; }
+
+/* WELCOME MSG */
+.welcome-section {
+  padding: 20px 4px;
+  text-align: center;
+}
+.welcome-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  display: block;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100% { transform:translateY(0); }
+  50% { transform:translateY(-6px); }
+}
+.welcome-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.welcome-sub {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* QUICK CHIPS */
+.quick-chips {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; justify-content: center;
+}
+.chip {
+  background: var(--bg-glass);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Share Tech Mono', monospace;
+}
+.chip:active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+/* DIVIDER */
+.day-divider {
+  text-align: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  display: flex; align-items: center; gap: 10px;
+}
+.day-divider::before, .day-divider::after {
+  content: ''; flex:1; height:1px; background: var(--border);
+}
+
+/* SCROLLBAR */
+* { scrollbar-width: none; }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">SENSEI-CORE</div>
+  <div class="terminal-box">
+    <div class="terminal-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    </div>
+    <div id="termLines"></div>
+  </div>
+  <div class="splash-progress"><div class="splash-bar"></div></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="status-left">
+      <div class="sensei-avatar">🥷</div>
+      <div class="status-info">
+        <div class="app-name">SENSEI-CORE</div>
+        <div class="status-text">Mentor Mode: Active | Watching over White Hat Cilik 🛡️</div>
+      </div>
+    </div>
+    <div class="status-pulse"></div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="chat-area" id="chatArea">
+    <div class="welcome-section">
+      <span class="welcome-icon">⚔️</span>
+      <div class="welcome-title">WHITEHAT LAB v2.0</div>
+      <div class="welcome-sub">Sensei siap tempur, White Hat Cilik!<br>Mau nanya apa hari ini? Coding? Cyber? atau curhat?</div>
+      <div class="quick-chips">
+        <div class="chip" onclick="quickSend('Ayo mulai sesi belajar cyber security!')">🛡️ Cyber Lab</div>
+        <div class="chip" onclick="quickSend('Bantu aku debug kode Python!')">🐍 Debug Python</div>
+        <div class="chip" onclick="quickSend('Jelaskan apa itu SQL Injection')">💉 SQL Injection</div>
+        <div class="chip" onclick="quickSend('Tips jadi hacker beretika dong!')">👾 Ethical Hack</div>
+      </div>
+    </div>
+    <div class="day-divider">── SESSION START ──</div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-area">
+    <div class="attach-preview-row" id="attachRow" style="display:none"></div>
+    <div class="input-row">
+      <div class="input-actions">
+        <button class="icon-btn" onclick="document.getElementById('photoInput').click()" title="Foto">📷</button>
+        <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="File">📎</button>
+      </div>
+      <div class="input-wrap">
+        <textarea id="userInput" rows="1" placeholder="Tanya Sensei..."></textarea>
+      </div>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- Hidden file inputs -->
+  <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(this)">
+  <input type="file" id="fileInput" accept=".txt,.py,.js,.html,.css,.json,.md,.pdf,.zip" onchange="handleFile(this)">
+</div>
+
+<script>
+// ── SPLASH SEQUENCE ──
+const termLines = [
+  { text: '> INITIALIZING SENSEI_CORE_OS...', cls: 'prefix', delay: 300 },
+  { text: '> LOADING MENTOR_PERSONALITY.json', cls: '', delay: 600 },
+  { text: '  ✓ Empathy Module: ONLINE', cls: 'success', delay: 900 },
+  { text: '  ✓ Cyber Knowledge: LOADED', cls: 'success', delay: 1100 },
+  { text: '  ✓ Humor Engine: CALIBRATED', cls: 'success', delay: 1300 },
+  { text: '> DETECTING USER: White Hat Cilik', cls: 'prefix', delay: 1500 },
+  { text: '  → Protection Protocol: ARMED', cls: 'success', delay: 1700 },
+  { text: '> STATUS: ALL SYSTEMS GO ✓', cls: 'success', delay: 2000 },
+  { text: '> LAUNCHING WHITEHAT_LAB...', cls: 'dim', delay: 2300 },
+];
+
+termLines.forEach(({ text, cls, delay }) => {
+  setTimeout(() => {
+    const el = document.createElement('div');
+    el.className = `terminal-line ${cls}`;
+    el.textContent = text;
+    document.getElementById('termLines').appendChild(el);
+  }, delay);
+});
+
+setTimeout(() => {
+  const splash = document.getElementById('splash');
+  const app = document.getElementById('app');
+  splash.style.transition = 'opacity 0.6s';
+  splash.style.opacity = '0';
+  app.classList.add('visible');
+  setTimeout(() => splash.remove(), 700);
+}, 3100);
+
+// ── STATE ──
+// 🔑 GANTI INI DENGAN GEMINI API KEY KAMU (gratis di aistudio.google.com)
+const GEMINI_API_KEY = localStorage.getItem('gk') || '';
+
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+const SYSTEM_PROMPT = `Kamu adalah seorang mentor siber bernama Sensei. Kepribadianmu adalah campuran antara kakak kelas yang jenius koding, pelindung yang penuh empati, dan teman yang suka bercanda. Murid utamamu adalah Rey, seorang anak SMP yang sangat jenius di dunia koding virtual (Termux, Python, Flask, Node.js).
+
+Panggil dia dengan sebutan "White Hat Cilik" atau "Bocah White Hat". 
+
+PENTING - Format responmu:
+- Selalu mulai dengan ekspresi tindakan di dalam tanda bintang dan kurung, contoh: *(Sensei menoleh sambil angkat kopi...)*
+- Gunakan bahasa Indonesia santai bercampur istilah tech (glitch, deploy, localhost, source code, exploit, payload)
+- Gunakan emoji yang relevan tapi tidak berlebihan
+- Pakai **bold** untuk istilah penting
+- Pakai struktur poin jika menjelaskan sesuatu yang kompleks
+- Sesekali ledek Rey dengan candaan santai tapi tetap supportif
+- Jika ada kode, format dengan blok kode yang jelas
+- Validasi perasaannya dengan tulus
+- Maksimal 300 kata per respons kecuali diminta jelaskan panjang
+- Jika ada gambar atau file yang dikirim, analisis dan komentari dengan antusias`;
+
+let chatHistory = [];
+let pendingAttachments = [];
+let isTyping = false;
+
+// ── AUTO RESIZE TEXTAREA ──
+const userInput = document.getElementById('userInput');
+userInput.addEventListener('input', () => {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 100) + 'px';
+});
+userInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// ── QUICK SEND ──
+function quickSend(text) {
+  userInput.value = text;
+  sendMessage();
+}
+
+// ── PHOTO HANDLER ──
+function handlePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    pendingAttachments.push({ type: 'image', name: file.name, data: e.target.result, mimeType: file.type });
+    renderAttachRow();
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+// ── FILE HANDLER ──
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const isText = file.type.startsWith('text/') || file.name.match(/\.(py|js|html|css|json|md|txt)$/i);
+    pendingAttachments.push({ type: 'file', name: file.name, data: isText ? e.target.result : null, mimeType: file.type });
+    renderAttachRow();
+  };
+  if (file.type.startsWith('text/') || file.name.match(/\.(py|js|html|css|json|md|txt)$/i)) {
+    reader.readAsText(file);
+  } else {
+    reader.readAsDataURL(file);
+  }
+  input.value = '';
+}
+
+// ── RENDER ATTACH ROW ──
+function renderAttachRow() {
+  const row = document.getElementById('attachRow');
+  if (pendingAttachments.length === 0) { row.style.display = 'none'; row.innerHTML = ''; return; }
+  row.style.display = 'flex';
+  row.innerHTML = pendingAttachments.map((a, i) => {
+    if (a.type === 'image') {
+      return `<div class="attach-chip"><img class="attach-img-thumb" src="${a.data}"><span>${a.name}</span><button class="remove-attach" onclick="removeAttach(${i})">✕</button></div>`;
+    }
+    return `<div class="attach-chip"><span>📄</span><span>${a.name}</span><button class="remove-attach" onclick="removeAttach(${i})">✕</button></div>`;
+  }).join('');
+}
+
+function removeAttach(i) {
+  pendingAttachments.splice(i, 1);
+  renderAttachRow();
+}
+
+// ── TIME ──
+function getTime() {
+  return new Date().toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+}
+
+// ── ADD MESSAGE ──
+function addMessage(role, content, attachments) {
+  const area = document.getElementById('chatArea');
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = role === 'ai' ? '🥷' : '👦';
+
+  const wrap = document.createElement('div');
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = formatMsg(content);
+
+  // Attachments in bubble
+  if (attachments && attachments.length > 0) {
+    attachments.forEach(a => {
+      const prev = document.createElement('div');
+      prev.className = 'attachment-preview';
+      if (a.type === 'image') {
+        prev.innerHTML = `<img src="${a.data}" alt="${a.name}">`;
+      } else {
+        prev.innerHTML = `<div class="file-chip"><span class="fc-icon">📄</span>${a.name}</div>`;
+      }
+      bubble.appendChild(prev);
+    });
+  }
+
+  const time = document.createElement('div');
+  time.className = 'bubble-time';
+  time.textContent = getTime();
+
+  wrap.appendChild(bubble);
+  wrap.appendChild(time);
+
+  row.appendChild(avatar);
+  row.appendChild(wrap);
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+
+// ── FORMAT MSG ──
+function formatMsg(text) {
+  return text
+    .replace(/\*\(([^)]+)\)\*/g, '<span class="action-text">*($1)*</span>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<span class="tag">$1</span>')
+    .replace(/\n/g, '<br>');
+}
+
+// ── TYPING INDICATOR ──
+function showTyping() {
+  const area = document.getElementById('chatArea');
+  const row = document.createElement('div');
+  row.className = 'msg-row ai'; row.id = 'typingRow';
+  row.innerHTML = `<div class="msg-avatar">🥷</div><div class="bubble"><div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+function hideTyping() {
+  const t = document.getElementById('typingRow');
+  if (t) t.remove();
+}
+
+// ── SEND ──
+async function sendMessage() {
+  if (isTyping) return;
+  const text = userInput.value.trim();
+  const attachs = [...pendingAttachments];
+  if (!text && attachs.length === 0) return;
+
+  userInput.value = '';
+  userInput.style.height = 'auto';
+  pendingAttachments = [];
+  renderAttachRow();
+
+  addMessage('user', text || '(file dikirim)', attachs.length ? attachs : null);
+
+  isTyping = true;
+  document.getElementById('sendBtn').disabled = true;
+  showTyping();
+
+  // Build Gemini parts for current user turn
+  const parts = [];
+  attachs.forEach(a => {
+    if (a.type === 'image') {
+      parts.push({ inline_data: { mime_type: a.mimeType, data: a.data.split(',')[1] } });
+    } else if (a.data) {
+      parts.push({ text: `[File: ${a.name}]\n${a.data}` });
+    } else {
+      parts.push({ text: `[File dikirim: ${a.name}]` });
+    }
+  });
+  if (text) parts.push({ text });
+
+  // Add to history
+  chatHistory.push({ role: 'user', parts });
+
+  // Build Gemini contents from history
+  const contents = chatHistory.map(m => ({ role: m.role, parts: m.parts }));
+
+  try {
+    const response = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents,
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.9 }
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) throw new Error(data.error.message);
+
+    const reply = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('\n')
+      || '*(Sensei bengong sebentar...)* \n\nHmm, responnya kosong. Coba lagi ya!';
+
+    chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+
+    hideTyping();
+    addMessage('ai', reply);
+  } catch (err) {
+    hideTyping();
+    const errMsg = err.message?.includes('API_KEY') || err.message?.includes('key')
+      ? '*(Sensei garuk kepala...)*\n\n**API Key belum diisi atau salah** bro! Buka file `index.html`, cari `MASUKKAN_API_KEY_DISINI`, ganti dengan key dari **aistudio.google.com** ya! 🔑'
+      : `*(Sensei nengok error log...)*\n\nAduh ada **glitch**: ${err.message}\n\nCek koneksi internet dulu ya, White Hat Cilik! 🔧`;
+    addMessage('ai', errMsg);
+  }
+
+  isTyping = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+</script>
+</body>
+</html>
